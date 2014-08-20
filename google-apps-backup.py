@@ -139,6 +139,7 @@ def requestMailboxDownload(url, cacheFile):
 
 def getMailboxExportStatus(url, cacheFile, email, epoch):
     """Print mailbox status and download mbox file if status is Complete"""
+    update = False
     for request in cacheFile["requests"]:
         print("Checking status of request %s.." % request)
         if cacheFile["requests"][request]["status"] == "PENDING":
@@ -162,6 +163,11 @@ def getMailboxExportStatus(url, cacheFile, email, epoch):
                     except KeyError:
                         pass
                     try:
+                        if elem.attrib["name"] == "userEmailAddress":
+                            print "Requested Users Mailbox: %s" % elem.attrib["value"]
+                    except KeyError:
+                        pass
+                    try:
                         if elem.attrib["name"] == "status":
                             print "Status of request: %s" % elem.attrib["value"]
                     except KeyError:
@@ -169,13 +175,17 @@ def getMailboxExportStatus(url, cacheFile, email, epoch):
                     try:
                         if elem.attrib["name"] == "fileUrl0":
                             print "Downloading file 0 for mbox: %s" % elem.attrib["value"]
-                            downloadMboxFile(elem.attrib["value"], email, epoch, "0")
+                            if downloadMboxFile(elem.attrib["value"], email, epoch, "0"):
+                                cacheFile["requests"][request]["status"] = "COMPLETE"
+                                update = True
                     except KeyError:
                         pass
                     try:
                         if elem.attrib["name"] == "fileUrl1":
                             print "Downloading file 1 for mbox: %s" % elem.attrib["value"]
-                            downloadMboxFile(elem.attrib["value"], email, epoch, "1")
+                            if downloadMboxFile(elem.attrib["value"], email, epoch, "1"):
+                                cacheFile["requests"][request]["status"] = "COMPLETE"
+                                update = True
                     except KeyError:
                         pass
             else:
@@ -184,6 +194,9 @@ def getMailboxExportStatus(url, cacheFile, email, epoch):
             tree = None
         else:
             print("Already Complete")
+    if update:
+        with open(cacheFileLocation, 'w') as cacheFileFp:
+            cacheFileFp.write(json.dumps(cacheFile))
 
 
 def postToGoogle(contentType, data, url, authorization=None):
