@@ -44,7 +44,6 @@ homeDirectory = os.path.expanduser("~") + "/"
 cacheFileLocation = homeDirectory + '.google-apps-backup.json'
 
 
-
 def formatPublicGpgUpload(publicGpgStringFile):
     """Read GPG public key from file and format Atom XML request for POST"""
     with open(publicGpgStringFile, "rb") as gpgFile:
@@ -83,54 +82,54 @@ def requestMailboxDownload(url, cacheFile):
     success = 0
     postData = formatMailboxDownloadRequestXml()
     responseData = postToGoogle(publicKeyUploadHeader, postData, url, cacheFile["token"]["Auth"])
-    if not responseData == False:
+    if not responseData:
         tree = etree.parse(responseData)
         for elem in tree.iterfind('{http://schemas.google.com/apps/2006}property'):
             try:
                 if elem.attrib["name"] == "requestId":
                     print "Request Id: %s" % elem.attrib["value"]
                     requestId = elem.attrib["value"]
-                    success = 1
+                    success = True
             except KeyError:
                 pass
             try:
                 if elem.attrib["name"] == "userEmailAddress":
                     print "Requested Users Mailbox: %s" % elem.attrib["value"]
                     requestedMailbox = elem.attrib["value"]
-                    success = 1
+                    success = True
             except KeyError:
                 pass
             try:
                 if elem.attrib["name"] == "adminEmailAddress":
                     print "Admin Email of Requester: %s" % elem.attrib["value"]
                     adminEmail = elem.attrib["value"]
-                    success = 1
+                    success = True
             except KeyError:
                 pass
             try:
                 if elem.attrib["name"] == "status":
                     print "Status of request: %s" % elem.attrib["value"]
                     statusOfRequest = elem.attrib["value"]
-                    success = 1
+                    success = True
             except KeyError:
                 pass
             try:
                 if elem.attrib["name"] == "requestDate":
                     print "Request Date: %s" % elem.attrib["value"]
                     requestDate = elem.attrib["value"]
-                    success = 1
+                    success = True
             except KeyError:
                 pass
             try:
                 if elem.attrib["name"] == "packageContent":
                     print "Package Contents: %s" % elem.attrib["value"]
                     packageContents = elem.attrib["value"]
-                    success = 1
+                    success = True
             except KeyError:
                 pass
         if success == 1:
             # Write request response to cacheFile
-            if not "requests" in cacheFile:
+            if "requests" not in cacheFile:
                 cacheFile["requests"] = {}
             cacheFile["requests"][requestId] = {"requestedMailbox": requestedMailbox, "adminEmail": adminEmail, "status": statusOfRequest, "requestDate": requestDate, "packageContents": packageContents}
             with open(cacheFileLocation, 'w') as cacheFileFp:
@@ -144,7 +143,7 @@ def getMailboxExportStatus(url, cacheFile, email, epoch):
         print("Checking status of request %s.." % request)
         if cacheFile["requests"][request]["status"] == "PENDING":
             status = getFromGoogle(request, url, cacheFile["token"]["Auth"])
-            if not status == False:
+            if not status:
                 tree = etree.parse(status)
                 for elem in tree.iterfind('{http://schemas.google.com/apps/2006}property'):
                     try:
@@ -203,7 +202,7 @@ def postToGoogle(contentType, data, url, authorization=None):
     """POST data Google"""
     req = urllib2.Request(url)
     req.add_header('Content-Type', contentType)
-    if not authorization == None:
+    if authorization is None:
         req.add_header('Authorization', "GoogleLogin auth=%s" % authorization)
     try:
         response = urllib2.urlopen(req, data)
@@ -218,7 +217,7 @@ def getFromGoogle(requestId, url, authorization=None):
     """GET data Google """
     url = url + requestId
     req = urllib2.Request(url)
-    if not authorization == None:
+    if authorization is None:
         req.add_header('Authorization', "GoogleLogin auth=%s" % authorization)
     try:
         response = urllib2.urlopen(req)
@@ -237,7 +236,8 @@ def downloadMboxFile(url, email, epoch, num):
     with open(mboxTmpFile, 'wb') as fp:
         while True:
             chunk = req.read(CHUNK)
-            if not chunk: break
+            if not chunk:
+                break
             fp.write(chunk)
     fp.close()
     print "Complete downloaded to %s" % mboxTmpFile
@@ -275,9 +275,9 @@ else:
 if args.installKey:
     # Insert new public GPG key to Google Apps
     # Adding a new key will overwrite any existing
-    #postData = formatPublicGpgUpload(args.key)
-    #publicKeyResponse = postToGoogle(publicKeyUploadHeader, postData, publicKeyUrl, args.token)
-    #print publicKeyResponse
+    # postData = formatPublicGpgUpload(args.key)
+    # publicKeyResponse = postToGoogle(publicKeyUploadHeader, postData, publicKeyUrl, args.token)
+    # print publicKeyResponse
     pass
 
 if args.backup:
@@ -289,3 +289,6 @@ if args.backup:
 if args.status:
     # Check mailbox status download if status is Complete
     getMailboxExportStatus(mailboxExportStatusUrl, cacheFile, args.email, epoch)
+
+
+print "Hello James"
